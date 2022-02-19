@@ -6,5 +6,17 @@ func extractStrategy<T : Codable>(for type: T.Type) -> AnySyncStrategy<T> {
         return type.erasedStrategy.read()
     }
 
+    if let type = type as? SyncedObject.Type {
+        return type.erasedStrategy.read()
+    }
+
     return AnySyncStrategy(CodableStrategy())
+}
+
+extension SyncedObject {
+
+    static var erasedStrategy: ErasedSyncStrategy {
+        return ErasedSyncStrategy(SyncedObjectStrategy<Self>())
+    }
+
 }
