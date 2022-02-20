@@ -22,6 +22,7 @@ class CodableStrategy<Value : Codable>: SyncStrategy {
 
     func events(for value: AnyPublisher<Value, Never>, with context: EventCodingContext) -> AnyPublisher<InternalEvent, Never> {
         return value
+            .dropFirst()
             .compactMap { value in
                 guard let data = try? context.encode(value) else { return nil }
                 return .write([], data)
