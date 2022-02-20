@@ -117,4 +117,22 @@ final class SyncTests: XCTestCase {
         XCTAssertEqual(clientViewModel.subViewModels[0].toggle, true)
         XCTAssertEqual(clientViewModel.subViewModels[1].toggle, false)
     }
+
+    func testMultipleClients() async throws {
+        let serverViewModel = ViewModel()
+        let service1 = MockRemoteService(viewModel: serverViewModel)
+        let service2 = MockRemoteService(viewModel: serverViewModel)
+        let clientConnection1 = MockClientConnection(service: service1)
+        let clientConnection2 = MockClientConnection(service: service2)
+        let clientManager1 = try await ViewModel.manager(with: clientConnection1)
+        let clientManager2 = try await ViewModel.manager(with: clientConnection2)
+        let clientViewModel1 = try clientManager1.value()
+        let clientViewModel2 = try clientManager2.value()
+
+        XCTAssertEqual(clientViewModel1.name, "Hello World!")
+        XCTAssertEqual(clientViewModel2.name, "Hello World!")
+        clientViewModel1.name = "Foo"
+        XCTAssertEqual(serverViewModel.name, "Foo")
+        XCTAssertEqual(clientViewModel2.name, "Foo")
+    }
 }

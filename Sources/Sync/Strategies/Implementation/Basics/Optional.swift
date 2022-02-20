@@ -15,36 +15,40 @@ class OptionalStrategy<Wrapped : Codable>: SyncStrategy {
         self.wrappedStrategy = wrappedStrategy
     }
 
-    func handle(event: InternalEvent, with context: EventCodingContext, for value: inout Wrapped?) throws {
+    func handle(event: InternalEvent, with context: EventCodingContext, for value: inout Wrapped?, from connectionId: UUID) throws -> EventSyncHandlingResult {
         switch event {
         case .delete(let path) where path.isEmpty:
             value = nil
+            return .alertRemainingConnections
         case .delete:
             guard case .some(var wrapped) = value else {
                 throw OptionalEventHandlingError.cannotPropagateDeletionToSubPathOfNil
             }
-            try wrappedStrategy.handle(event: event, with: context, for: &wrapped)
+            let result = try wrappedStrategy.handle(event: event, with: context, for: &wrapped, from: connectionId)
             value = wrapped
+            return result
         case .write(let path, let data):
             switch value {
             case .none where path.isEmpty:
                 value = try context.decode(data: data, as: Wrapped.self)
+                return .alertRemainingConnections
             case .none:
                 throw OptionalEventHandlingError.cannotPropagateWriteToSubPathOfNil
             case .some(var wrapped):
-                try wrappedStrategy.handle(event: event, with: context, for: &wrapped)
+                let result = try wrappedStrategy.handle(event: event, with: context, for: &wrapped, from: connectionId)
                 value = wrapped
+                return result
             }
         }
     }
 
-    func events(for value: AnyPublisher<Wrapped?, Never>, with context: EventCodingContext) -> AnyPublisher<InternalEvent, Never> {
+    func events(for value: AnyPublisher<Wrapped?, Never>, with context: EventCodingContext, from connectionId: UUID) -> AnyPublisher<InternalEvent, Never> {
         return value.flatMap { value -> AnyPublisher<InternalEvent, Never> in
             switch value {
             case .none:
                 return Just(.delete([])).eraseToAnyPublisher()
             case .some(let value):
-                return self.wrappedStrategy.events(for: Just(value).eraseToAnyPublisher(), with: context)
+                return self.wrappedStrategy.events(for: Just(value).eraseToAnyPublisher(), with: context, from: connectionId)
             }
         }
         .eraseToAnyPublisher()

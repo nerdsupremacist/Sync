@@ -30,7 +30,7 @@ class SyncedObjectStrategy<Value: SyncedObject>: SyncStrategy {
         return strategiesPerPath
     }
 
-    func handle(event: InternalEvent, with context: EventCodingContext, for value: inout Value) throws {
+    func handle(event: InternalEvent, with context: EventCodingContext, for value: inout Value, from connectionId: UUID) throws -> EventSyncHandlingResult {
         switch event {
         case .delete(let path) where path.isEmpty:
             throw ObjectEventHandlingError.cannotDeleteSyncedObject
@@ -42,17 +42,18 @@ class SyncedObjectStrategy<Value: SyncedObject>: SyncStrategy {
             guard let strategy = strategiesPerPath[label] else {
                 throw ObjectEventHandlingError.syncedPropertyForLabelNotFound(label)
             }
-            try strategy.handle(event: event.oneLevelLower(), with: context)
+            try strategy.handle(event: event.oneLevelLower(), with: context, from: connectionId)
+            return .done
         }
     }
 
-    func events(for value: AnyPublisher<Value, Never>, with context: EventCodingContext) -> AnyPublisher<InternalEvent, Never> {
+    func events(for value: AnyPublisher<Value, Never>, with context: EventCodingContext, from connectionId: UUID) -> AnyPublisher<InternalEvent, Never> {
         return value
             .flatMap { [unowned self] value -> AnyPublisher<InternalEvent, Never> in
                 let strategiesPerPath = self.computeStrategies(for: value)
                 let publishers = strategiesPerPath.map { item -> AnyPublisher<InternalEvent, Never> in
                     let (label, strategy) = item
-                    return strategy.events(with: context).map { $0.prefix(by: label) }.eraseToAnyPublisher()
+                    return strategy.events(with: context, from: connectionId).map { $0.prefix(by: label) }.eraseToAnyPublisher()
                 }
 
                 return Publishers.MergeMany(publishers).eraseToAnyPublisher()

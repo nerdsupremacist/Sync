@@ -10,7 +10,7 @@ class CodableStrategy<Value : Codable>: SyncStrategy {
 
     init() { }
 
-    func handle(event: InternalEvent, with context: EventCodingContext, for value: inout Value) throws {
+    func handle(event: InternalEvent, with context: EventCodingContext, for value: inout Value, from connectionId: UUID) throws -> EventSyncHandlingResult {
         guard case .write(let path, let data) = event else {
             throw CodableEventHandlingError.codableCannotBeDeleted
         }
@@ -18,9 +18,10 @@ class CodableStrategy<Value : Codable>: SyncStrategy {
             throw CodableEventHandlingError.codableDoesNotAcceptSubPaths
         }
         value = try context.decode(data: data, as: Value.self)
+        return .alertRemainingConnections
     }
 
-    func events(for value: AnyPublisher<Value, Never>, with context: EventCodingContext) -> AnyPublisher<InternalEvent, Never> {
+    func events(for value: AnyPublisher<Value, Never>, with context: EventCodingContext, from connectionId: UUID) -> AnyPublisher<InternalEvent, Never> {
         return value
             .dropFirst()
             .compactMap { value in

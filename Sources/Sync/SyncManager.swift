@@ -39,6 +39,7 @@ public class SyncManager<Value: SyncedObject> {
         }
     }
 
+    private let id = UUID()
     private let strategy: AnySyncStrategy<Value>
     private let storage: BaseStorage
     public let connection: Connection
@@ -92,7 +93,7 @@ public class SyncManager<Value: SyncedObject> {
                 do {
                     var value = try self.value()
                     let event = try self.connection.codingContext.decode(data: data, as: InternalEvent.self)
-                    try self.strategy.handle(event: event, with: self.connection.codingContext, for: &value)
+                    _ = try self.strategy.handle(event: event, with: self.connection.codingContext, for: &value, from: self.id)
                     self.hasChangedSubject.send()
                 } catch {
                     self.errorsSubject.send(error)
@@ -103,7 +104,8 @@ public class SyncManager<Value: SyncedObject> {
         guard let value = storage.object else { return }
         strategy
             .events(for: Just(value).eraseToAnyPublisher(),
-                    with: connection.codingContext)
+                    with: connection.codingContext,
+                    from: self.id)
             .sink { [unowned self] event in
                 do {
                     self.hasChangedSubject.send()
