@@ -12,8 +12,10 @@ public struct SyncedObservedObject<Value : SyncedObject>: DynamicProperty {
             self.syncManager = syncManager
         }
 
-        var objectWillChange: AnyPublisher<Void, Never> {
-            return syncManager.eventHasChanged
+        var objectWillChange: some Publisher {
+            return syncManager
+                .eventHasChanged
+                .receive(on: DispatchQueue.main)
         }
     }
 

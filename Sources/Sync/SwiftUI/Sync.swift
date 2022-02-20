@@ -76,10 +76,15 @@ fileprivate class SyncViewModel<Value : SyncedObject>: ObservableObject {
             isLoading = true
             do {
                 let manager = try await Value.manager(with: connection)
-                self.state = await .synced(try SyncedObservedObject(syncManager: manager))
+                let state: State = await .synced(try SyncedObservedObject(syncManager: manager))
+                DispatchQueue.main.async { [weak self] in
+                    self?.state = state
+                }
             } catch {
-                isLoading = false
-                self.error = error
+                DispatchQueue.main.async { [weak self] in
+                    self?.isLoading = false
+                    self?.error = error
+                }
             }
         }
     }
