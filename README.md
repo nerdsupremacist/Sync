@@ -51,6 +51,10 @@ let package = Package(
 If you have ever used Observable Object, then Sync will be extremely easy to use. 
 For this example we will create an app with a Switch that everyone can flip on or off as they like. We will build this using SwiftUI, WebSockets and a Vapor Server.
 
+<p align="center">
+    <img src="demo.gif" width="600" max-width="90%" alt="Sync" />
+</p>
+
 For this we will need a few additional packages:
 - [Vapor](https://vapor.codes): To create a Web Server that will sync our devices
 - [SyncWebSocketClient](https://github.com/nerdsupremacist/SyncWebSocketClient): The client code for using WebSockets
