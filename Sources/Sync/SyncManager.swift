@@ -1,9 +1,9 @@
 
 import Foundation
 import Combine
+import SwiftUI
 
-public protocol SyncedObject: AnyObject, Codable { }
-
+@dynamicMemberLookup
 public class SyncManager<Value: SyncedObject> {
     enum SyncManagerError: Error {
         case unretainedValueWasReleased
@@ -79,6 +79,11 @@ public class SyncManager<Value: SyncedObject> {
         return try connection.codingContext.encode(try value())
     }
 
+    public subscript<Subject : Codable>(dynamicMember keyPath: WritableKeyPath<Value, Subject>) -> Binding<Subject> {
+        var value = try! value()
+        return Binding(get: { value[keyPath: keyPath] }, set: { value[keyPath: keyPath] = $0 })
+    }
+
     private func setUpConnection() {
         cancellables = []
         connection
@@ -109,21 +114,5 @@ public class SyncManager<Value: SyncedObject> {
                 }
             }
             .store(in: &cancellables)
-    }
-}
-
-extension SyncedObject {
-    public func manager(with connection: ProducerConnection) -> SyncManager<Self> {
-        return SyncManager(self, connection: connection)
-    }
-
-    public func managerWithoutRetainingInMemory(with connection: ProducerConnection) -> SyncManager<Self> {
-        return SyncManager(weak: self, connection: connection)
-    }
-
-    public static func manager(with connection: ConsumerConnection) async throws -> SyncManager<Self> {
-        let data = try await connection.connect()
-        let value = try connection.codingContext.decode(data: data, as: Self.self)
-        return SyncManager(value, connection: connection)
     }
 }
