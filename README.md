@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="logo.png" width="400" max-width="90%" alt="Sync" />
+    <img src="logo.png" width="600" max-width="90%" alt="Sync" />
 </p>
 
 <p align="center">
