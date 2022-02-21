@@ -5,7 +5,6 @@ import Foundation
 import SwiftUI
 import OpenCombineShim
 
-
 public struct Sync<Value : SyncableObject, Content : View>: View {
     @StateObject
     private var viewModel: SyncViewModel<Value>
@@ -13,7 +12,7 @@ public struct Sync<Value : SyncableObject, Content : View>: View {
 
     public init(_ type: Value.Type,
                 using connection: ConsumerConnection,
-                reconnectionStrategy: ReconnectionStrategy = .tryAgain,
+                reconnectionStrategy: ReconnectionStrategy? = nil,
                 @ViewBuilder content: @escaping (SyncedObject<Value>) -> Content) {
 
         self._viewModel = StateObject(wrappedValue: SyncViewModel(connection: connection, reconnectionStrategy: reconnectionStrategy))
