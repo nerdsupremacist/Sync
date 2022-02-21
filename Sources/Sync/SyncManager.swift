@@ -101,11 +101,16 @@ public class SyncManager<Value: SyncableObject> {
             connection.disconnect()
         }
         let data = try await connection.connect()
-        let value = try connection.codingContext.decode(data: data, as: Value.self)
-        storage.set(value: value)
-        setUpConnection()
-        hasChangedSubject.send()
-        return true
+        do {
+            let value = try connection.codingContext.decode(data: data, as: Value.self)
+            storage.set(value: value)
+            setUpConnection()
+            hasChangedSubject.send()
+            return true
+        } catch {
+            connection.disconnect()
+            throw error
+        }
     }
     
     private func setUpConnection() {

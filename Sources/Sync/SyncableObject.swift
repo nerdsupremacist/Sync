@@ -15,7 +15,12 @@ extension SyncableObject {
 
     public static func sync(with connection: ConsumerConnection) async throws -> SyncManager<Self> {
         let data = try await connection.connect()
-        let value = try connection.codingContext.decode(data: data, as: Self.self)
-        return SyncManager(value, connection: connection)
+        do {
+            let value = try connection.codingContext.decode(data: data, as: Self.self)
+            return SyncManager(value, connection: connection)
+        } catch {
+            connection.disconnect()
+            throw error
+        }
     }
 }
