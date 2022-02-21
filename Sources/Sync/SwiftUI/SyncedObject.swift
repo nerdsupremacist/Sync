@@ -12,7 +12,11 @@ public struct SyncedObject<Value : SyncableObject>: DynamicProperty {
     private let manager: AnyManager
 
     @State
-    var value: Value
+    var value: Value {
+        didSet {
+            fakeObservable.forceUpdate()
+        }
+    }
 
     public var wrappedValue: Value {
         get {
@@ -60,6 +64,7 @@ extension SyncedObject {
 }
 
 private final class FakeObservableObject: ObservableObject {
+    private let manualUpdate = PassthroughSubject<Void, Never>()
     private let manager: AnyManager
 
     init(manager: AnyManager) {
@@ -72,8 +77,13 @@ private final class FakeObservableObject: ObservableObject {
 
         return changeEvents
             .merge(with: connectionChange)
+            .merge(with: manualUpdate)
             .receive(on: DispatchQueue.main)
             .eraseToAnyPublisher()
+    }
+
+    func forceUpdate() {
+        manualUpdate.send()
     }
 }
 
