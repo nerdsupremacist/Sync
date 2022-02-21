@@ -67,8 +67,11 @@ private final class FakeObservableObject: ObservableObject {
     }
 
     var objectWillChange: AnyPublisher<Void, Never> {
-        return manager
-            .eventHasChanged
+        let changeEvents = manager.eventHasChanged
+        let connectionChange = manager.connection.isConnectedPublisher.removeDuplicates().map { _ in () }
+
+        return changeEvents
+            .merge(with: connectionChange)
             .receive(on: DispatchQueue.main)
             .eraseToAnyPublisher()
     }
