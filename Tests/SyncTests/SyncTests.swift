@@ -7,6 +7,10 @@ class MockServerConnection: ProducerConnection {
         return true
     }
 
+    var isConnectedPublisher: AnyPublisher<Bool, Never> {
+        return Empty().eraseToAnyPublisher()
+    }
+
     let codingContext: EventCodingContext = .json
     private let inputSubject = PassthroughSubject<Data, Never>()
     private let outputSubject = PassthroughSubject<Data, Never>()
@@ -43,6 +47,10 @@ class MockClientConnection: ConsumerConnection {
 
     var isConnected: Bool {
         return serverConnection != nil
+    }
+
+    var isConnectedPublisher: AnyPublisher<Bool, Never> {
+        return Empty().eraseToAnyPublisher()
     }
 
     func connect() async throws -> Data {

@@ -4,6 +4,8 @@ import OpenCombineShim
 
 public protocol Connection {
     var isConnected: Bool { get }
+    var isConnectedPublisher: AnyPublisher<Bool, Never> { get }
+
     var codingContext: EventCodingContext { get }
 
     func disconnect()
