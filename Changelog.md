@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `valueChange` publisher to `Synced`, to listen for changes to the value
 - Added getter for `connection` to `SyncedObject`
 - Added support for getting a `SyncedObbject` from a parent `SyncedObject` via dynamic member lookup 
+- Added `SyncManager.reconnect` method to restard connection
+- Added `ReconnectionStrategy` in order to attempt to resume the session after being disconnected
 
 ## Changed
 - **Breaking:** Renamed `SyncedObject` protocol to `SyncableObject`. To be consistent with `ObservableObject`
