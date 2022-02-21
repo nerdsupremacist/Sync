@@ -41,7 +41,7 @@ import PackageDescription
 let package = Package(
     [...]
     dependencies: [
-        .package(url: "https://github.com/nerdsupremacist/Sync.git", from: "0.1.0")
+        .package(url: "https://github.com/nerdsupremacist/Sync.git", from: "1.0.0")
     ]
 )
 ```
