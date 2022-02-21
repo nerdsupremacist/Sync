@@ -26,6 +26,10 @@ public struct SyncedObject<Value : SyncableObject>: DynamicProperty {
         }
     }
 
+    public var projectedValue: SyncedObject<Value> {
+        return self
+    }
+
     private init(value: Value, manager: AnyManager) {
         self.fakeObservable = FakeObservableObject(manager: manager)
         self.storage = Storage(value: value)
@@ -40,14 +44,6 @@ public struct SyncedObject<Value : SyncableObject>: DynamicProperty {
         self.storage.value = value
         fakeObservable.forceUpdate()
     }
-}
-
-extension SyncedObject {
-
-    public var projectedValue: SyncedObject<Value> {
-        return self
-    }
-
 }
 
 extension SyncedObject {
