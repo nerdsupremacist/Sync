@@ -60,7 +60,7 @@ For this we will need a few additional packages:
 - [SyncWebSocketClient](https://github.com/nerdsupremacist/SyncWebSocketClient): The client code for using WebSockets
 - [SyncWebSocketVapor](https://github.com/nerdsupremacist/SyncWebSocketVapor): A utility to make it easy to serve our object via a WebSocket
 
-Let's start by building our shared ViewModel. This is easy, instead of using `ObservableObject` we use `SyncedObject`. And instead of `Published` we use `Synced`:
+Let's start by building our shared ViewModel. This is easy, instead of using `ObservableObject` we use `SyncableObject`. And instead of `Published` we use `Synced`:
 ```swift
 class ViewModel: SyncableObject {
     @Synced
@@ -89,7 +89,7 @@ try app.run()
 ```
 
 For our SwiftUI App, we need to use two things:
-- @SyncedObservedObject: Like [ObservedObject](https://developer.apple.com/documentation/swiftui/observedobject), but for Synced Objects. It's a property wrapper that will dynamically tell SwiftUI when to update the UI
+- @SyncedObject: Like [ObservedObject](https://developer.apple.com/documentation/swiftui/observedobject), but for Syncable Objects. It's a property wrapper that will dynamically tell SwiftUI when to update the UI
 - Sync: A little wrapper view to start the remote session
 
 Our actual view then uses SyncedObservedObject with our ViewModel
