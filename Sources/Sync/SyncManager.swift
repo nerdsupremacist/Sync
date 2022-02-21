@@ -3,8 +3,7 @@ import Foundation
 import OpenCombineShim
 import SwiftUI
 
-@dynamicMemberLookup
-public class SyncManager<Value: SyncedObject> {
+public class SyncManager<Value: SyncableObject> {
     enum SyncManagerError: Error {
         case unretainedValueWasReleased
     }
@@ -79,12 +78,7 @@ public class SyncManager<Value: SyncedObject> {
     public func data() throws -> Data {
         return try connection.codingContext.encode(try value())
     }
-
-    public subscript<Subject : Codable>(dynamicMember keyPath: WritableKeyPath<Value, Subject>) -> Binding<Subject> {
-        var value = try! value()
-        return Binding(get: { value[keyPath: keyPath] }, set: { value[keyPath: keyPath] = $0 })
-    }
-
+    
     private func setUpConnection() {
         cancellables = []
         connection

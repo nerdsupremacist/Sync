@@ -79,14 +79,14 @@ class MockRemoteService {
 
     func createConnection() async throws -> MockResponse {
         let connection = MockServerConnection()
-        let manager = viewModel.manager(with: connection)
+        let manager = viewModel.sync(with: connection)
         managers.append(manager)
         return MockResponse(data: try manager.data(), connection: connection)
     }
 }
 
-class ViewModel: SyncedObject, Codable {
-    class SubViewModel: SyncedObject, Codable {
+class ViewModel: SyncableObject, Codable {
+    class SubViewModel: SyncableObject, Codable {
         @Synced
         var toggle = false
     }
@@ -106,7 +106,7 @@ final class SyncTests: XCTestCase {
         let serverViewModel = ViewModel()
         let service = MockRemoteService(viewModel: serverViewModel)
         let clientConnection = MockClientConnection(service: service)
-        let clientManager = try await ViewModel.manager(with: clientConnection)
+        let clientManager = try await ViewModel.sync(with: clientConnection)
         let clientViewModel = try clientManager.value()
 
         XCTAssertEqual(clientViewModel.name, "Hello World!")
@@ -132,8 +132,8 @@ final class SyncTests: XCTestCase {
         let service2 = MockRemoteService(viewModel: serverViewModel)
         let clientConnection1 = MockClientConnection(service: service1)
         let clientConnection2 = MockClientConnection(service: service2)
-        let clientManager1 = try await ViewModel.manager(with: clientConnection1)
-        let clientManager2 = try await ViewModel.manager(with: clientConnection2)
+        let clientManager1 = try await ViewModel.sync(with: clientConnection1)
+        let clientManager2 = try await ViewModel.sync(with: clientConnection2)
         let clientViewModel1 = try clientManager1.value()
         let clientViewModel2 = try clientManager2.value()
 

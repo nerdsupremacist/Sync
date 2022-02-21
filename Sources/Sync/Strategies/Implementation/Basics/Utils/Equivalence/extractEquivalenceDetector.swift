@@ -9,13 +9,13 @@ func extractEquivalenceDetector<T>(for type: T.Type) -> AnyEquivalenceDetector<T
     if let type = type as? HasErasedErasedEquivalenceDetector.Type {
         return type.erasedEquivalenceDetector?.read()
     }
-    if let type = type as? SyncedObject.Type {
+    if let type = type as? SyncableObject.Type {
         return type.erasedEquivalenceDetector.read()
     }
     return nil
 }
 
-extension SyncedObject {
+extension SyncableObject {
     static var erasedEquivalenceDetector: ErasedEquivalenceDetector {
         return ErasedEquivalenceDetector(ReferenceEquivalenceDetector<Self>())
     }

@@ -2,7 +2,7 @@
 import Foundation
 import OpenCombineShim
 
-class SyncedObjectStrategy<Value: SyncedObject>: SyncStrategy {
+class SyncableObjectStrategy<Value: SyncableObject>: SyncStrategy {
     enum ObjectEventHandlingError: Error {
         case cannotHandleInsertion
         case cannotDeleteSyncedObject

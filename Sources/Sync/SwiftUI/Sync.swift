@@ -4,17 +4,17 @@ import Foundation
 #if canImport(SwiftUI)
 import SwiftUI
 
-public struct Sync<Value : SyncedObject, Content : View>: View {
+public struct Sync<Value : SyncableObject, Content : View>: View {
     @StateObject
     private var viewModel: SyncViewModel<Value>
-    private let content: (SyncedObservedObject<Value>) -> Content
+    private let content: (SyncedObject<Value>) -> Content
 
-    public init(_ type: Value.Type, using connection: ConsumerConnection, @ViewBuilder content: @escaping (SyncedObservedObject<Value>) -> Content) {
+    public init(_ type: Value.Type, using connection: ConsumerConnection, @ViewBuilder content: @escaping (SyncedObject<Value>) -> Content) {
         self._viewModel = StateObject(wrappedValue: SyncViewModel(connection: connection))
         self.content = content
     }
 
-    public init(_ type: Value.Type, using syncManager: SyncManager<Value>, @ViewBuilder content: @escaping (SyncedObservedObject<Value>) -> Content) {
+    public init(_ type: Value.Type, using syncManager: SyncManager<Value>, @ViewBuilder content: @escaping (SyncedObject<Value>) -> Content) {
         self._viewModel = StateObject(wrappedValue: SyncViewModel(syncManager: syncManager))
         self.content = content
     }
@@ -35,10 +35,10 @@ public struct Sync<Value : SyncedObject, Content : View>: View {
     }
 }
 
-fileprivate class SyncViewModel<Value : SyncedObject>: ObservableObject {
+fileprivate class SyncViewModel<Value : SyncableObject>: ObservableObject {
     private enum State {
         case loading(ConsumerConnection)
-        case synced(SyncedObservedObject<Value>)
+        case synced(SyncedObject<Value>)
     }
 
     @Published
@@ -50,7 +50,7 @@ fileprivate class SyncViewModel<Value : SyncedObject>: ObservableObject {
     @Published
     private(set) var error: Error?
 
-    var synced: SyncedObservedObject<Value>? {
+    var synced: SyncedObject<Value>? {
         switch state {
         case .synced(let object):
             return object
@@ -64,7 +64,7 @@ fileprivate class SyncViewModel<Value : SyncedObject>: ObservableObject {
     }
 
     init(syncManager: SyncManager<Value>) {
-        self.state = .synced(try! SyncedObservedObject(syncManager: syncManager))
+        self.state = .synced(try! SyncedObject(syncManager: syncManager))
     }
 
     func loadIfNeeded() async {
@@ -75,8 +75,8 @@ fileprivate class SyncViewModel<Value : SyncedObject>: ObservableObject {
             guard !isLoading else { return }
             isLoading = true
             do {
-                let manager = try await Value.manager(with: connection)
-                let state: State = await .synced(try SyncedObservedObject(syncManager: manager))
+                let manager = try await Value.sync(with: connection)
+                let state: State = await .synced(try SyncedObject(syncManager: manager))
                 DispatchQueue.main.async { [weak self] in
                     self?.state = state
                 }
