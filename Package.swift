@@ -12,12 +12,14 @@ let package = Package(
             targets: ["Sync"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/OpenCombine/OpenCombine.git", from: "0.13.0"),
         .package(url: "https://github.com/nerdsupremacist/AssociatedTypeRequirementsKit.git", .upToNextMinor(from: "0.3.2")),
     ],
     targets: [
         .target(
             name: "Sync",
             dependencies: [
+                .product(name: "OpenCombineShim", package: "OpenCombine"),
                 .product(name: "AssociatedTypeRequirementsKit", package: "AssociatedTypeRequirementsKit"),
             ]),
         .testTarget(

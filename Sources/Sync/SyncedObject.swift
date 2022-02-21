@@ -1,6 +1,6 @@
 
 import Foundation
-import Combine
+import OpenCombineShim
 
 public protocol SyncedObject: AnyObject, Codable { }
 

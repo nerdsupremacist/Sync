@@ -1,6 +1,6 @@
 
 import Foundation
-import Combine
+import OpenCombineShim
 
 class OptionalStrategy<Wrapped : Codable>: SyncStrategy {
     enum OptionalEventHandlingError: Error {

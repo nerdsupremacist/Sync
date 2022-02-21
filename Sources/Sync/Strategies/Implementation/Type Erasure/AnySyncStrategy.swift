@@ -1,6 +1,6 @@
 
 import Foundation
-import Combine
+import OpenCombineShim
 
 class AnySyncStrategy<Value>: SyncStrategy {
     private class BaseStorage {

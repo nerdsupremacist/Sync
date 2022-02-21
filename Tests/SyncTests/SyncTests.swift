@@ -1,6 +1,6 @@
 import XCTest
 @testable import Sync
-import Combine
+import OpenCombineShim
 
 class MockServerConnection: ProducerConnection {
     var isConnected: Bool {

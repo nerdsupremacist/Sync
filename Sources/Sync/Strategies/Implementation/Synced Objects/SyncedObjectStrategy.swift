@@ -1,6 +1,6 @@
 
 import Foundation
-import Combine
+import OpenCombineShim
 
 class SyncedObjectStrategy<Value: SyncedObject>: SyncStrategy {
     enum ObjectEventHandlingError: Error {

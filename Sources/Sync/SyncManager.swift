@@ -1,6 +1,6 @@
 
 import Foundation
-import Combine
+import OpenCombineShim
 import SwiftUI
 
 @dynamicMemberLookup

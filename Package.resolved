@@ -9,6 +9,15 @@
           "revision": "2e4c49c21ffb2135f1c99fbfcf2119c9d24f5e8c",
           "version": "0.3.2"
         }
+      },
+      {
+        "package": "OpenCombine",
+        "repositoryURL": "https://github.com/OpenCombine/OpenCombine.git",
+        "state": {
+          "branch": null,
+          "revision": "9cf67e363738dbab61b47fb5eaed78d3db31e5ee",
+          "version": "0.13.0"
+        }
       }
     ]
   },
