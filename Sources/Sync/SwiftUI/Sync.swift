@@ -27,7 +27,6 @@ public struct Sync<Value : SyncableObject, Content : View>: View {
     public var body: some View {
         if let synced = viewModel.synced {
             content(synced)
-                .disabled(!synced.connection.isConnected)
         } else if let error = viewModel.error {
             Text(error.localizedDescription)
         } else {
@@ -91,6 +90,7 @@ fileprivate class SyncViewModel<Value : SyncableObject>: ObservableObject {
                 cancellables = []
                 let manager = try await Value.sync(with: connection)
                 let object = try await SyncedObject(syncManager: manager)
+
                 if let reconnectionStrategy = reconnectionStrategy {
                     connection
                         .isConnectedPublisher
@@ -104,7 +104,9 @@ fileprivate class SyncViewModel<Value : SyncableObject>: ObservableObject {
                                         _ = try await manager.reconnect()
                                         break
                                     } catch {
-                                        self.error = error
+                                        DispatchQueue.main.async { [weak self] in
+                                            self?.error = error
+                                        }
                                     }
                                 }
                             }
