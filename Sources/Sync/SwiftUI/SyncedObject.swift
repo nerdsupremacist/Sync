@@ -5,31 +5,39 @@ import Combine
 
 @dynamicMemberLookup
 @propertyWrapper
-public class SyncedObject<Value : SyncableObject>: DynamicProperty {
+public struct SyncedObject<Value : SyncableObject>: DynamicProperty {
+    private class Storage {
+        var value: Value
+
+        init(value: Value) {
+            self.value = value
+        }
+    }
+
     @ObservedObject
     private var fakeObservable: FakeObservableObject
 
     private let manager: AnyManager
-    private var value: Value
+    private let storage: Storage
 
     public var wrappedValue: Value {
         get {
-            return value
+            return storage.value
         }
     }
 
     private init(value: Value, manager: AnyManager) {
         self.fakeObservable = FakeObservableObject(manager: manager)
-        self.value = value
+        self.storage = Storage(value: value)
         self.manager = manager
     }
 
-    convenience init(syncManager: SyncManager<Value>) throws {
+    init(syncManager: SyncManager<Value>) throws {
         self.init(value: try syncManager.value(), manager: Manager(manager: syncManager))
     }
 
     func forceUpdate(value: Value) {
-        self.value = value
+        self.storage.value = value
         fakeObservable.forceUpdate()
     }
 }
@@ -53,11 +61,11 @@ extension SyncedObject {
 extension SyncedObject {
 
     public subscript<Subject : SyncableObject>(dynamicMember keyPath: KeyPath<Value, Subject>) -> SyncedObject<Subject> {
-        return SyncedObject<Subject>(value: value[keyPath: keyPath], manager: manager)
+        return SyncedObject<Subject>(value: storage.value[keyPath: keyPath], manager: manager)
     }
 
     public subscript<Subject : Codable>(dynamicMember keyPath: WritableKeyPath<Value, Subject>) -> Binding<Subject> {
-        return Binding(get: { self.value[keyPath: keyPath] }, set: { self.value[keyPath: keyPath] = $0 })
+        return Binding(get: { self.storage.value[keyPath: keyPath] }, set: { self.storage.value[keyPath: keyPath] = $0 })
     }
 
 }
@@ -68,15 +76,14 @@ private final class FakeObservableObject: ObservableObject {
     private let manualUpdate = PassthroughSubject<Void, Never>()
     private let manager: AnyManager
 
+    let objectWillChange: AnyPublisher<Void, Never>
+
     init(manager: AnyManager) {
         self.manager = manager
-    }
-
-    var objectWillChange: AnyPublisher<Void, Never> {
         let changeEvents = manager.eventHasChanged
         let connectionChange = manager.connection.isConnectedPublisher.removeDuplicates().map { _ in () }
 
-        return changeEvents
+        objectWillChange = changeEvents
             .merge(with: connectionChange)
             .merge(with: manualUpdate)
             .receive(on: DispatchQueue.main)
