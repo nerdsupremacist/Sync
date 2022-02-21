@@ -12,7 +12,7 @@ public struct SyncedObject<Value : SyncableObject>: DynamicProperty {
     private let manager: AnyManager
 
     @State
-    private var value: Value
+    var value: Value
 
     public var wrappedValue: Value {
         get {

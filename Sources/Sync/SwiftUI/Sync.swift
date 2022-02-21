@@ -102,7 +102,11 @@ fileprivate class SyncViewModel<Value : SyncableObject>: ObservableObject {
                                 while case .attemptToReconnect = await reconnectionStrategy.maybeReconnect() {
                                     do {
                                         _ = try await manager.reconnect()
-                                        break
+                                        let updateTask = Task { @MainActor in
+                                            object.value = try manager.value()
+                                        }
+                                        try await updateTask.value
+                                        return
                                     } catch {
                                         DispatchQueue.main.async { [weak self] in
                                             self?.error = error
