@@ -4,6 +4,8 @@ import Combine
 
 class OptionalStrategy<Wrapped : Codable>: SyncStrategy {
     enum OptionalEventHandlingError: Error {
+        case cannotHandleInsertion
+        case cannotPropagateInsertionToSubPathOfNil
         case cannotPropagateDeletionToSubPathOfNil
         case cannotPropagateWriteToSubPathOfNil
     }
@@ -17,6 +19,8 @@ class OptionalStrategy<Wrapped : Codable>: SyncStrategy {
 
     func handle(event: InternalEvent, with context: EventCodingContext, for value: inout Wrapped?, from connectionId: UUID) throws -> EventSyncHandlingResult {
         switch event {
+        case .insert(let path, _, _) where path.isEmpty:
+            throw OptionalEventHandlingError.cannotHandleInsertion
         case .delete(let path) where path.isEmpty:
             value = nil
             return .alertRemainingConnections
@@ -34,6 +38,15 @@ class OptionalStrategy<Wrapped : Codable>: SyncStrategy {
                 return .alertRemainingConnections
             case .none:
                 throw OptionalEventHandlingError.cannotPropagateWriteToSubPathOfNil
+            case .some(var wrapped):
+                let result = try wrappedStrategy.handle(event: event, with: context, for: &wrapped, from: connectionId)
+                value = wrapped
+                return result
+            }
+        case .insert(_, _, _):
+            switch value {
+            case .none:
+                throw OptionalEventHandlingError.cannotPropagateInsertionToSubPathOfNil
             case .some(var wrapped):
                 let result = try wrappedStrategy.handle(event: event, with: context, for: &wrapped, from: connectionId)
                 value = wrapped

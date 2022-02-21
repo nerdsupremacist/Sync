@@ -12,16 +12,34 @@ class ArrayStrategy<Element : Codable>: SyncStrategy {
     typealias Value = [Element]
 
     let elementStrategy: AnySyncStrategy<Element>
+    let equivalenceDetector: AnyEquivalenceDetector<Element>?
 
-    init(_ elementStrategy: AnySyncStrategy<Element>) {
+    init(_ elementStrategy: AnySyncStrategy<Element>, equivalenceDetector: AnyEquivalenceDetector<Element>?) {
         self.elementStrategy = elementStrategy
+        self.equivalenceDetector = equivalenceDetector
     }
 
     func handle(event: InternalEvent, with context: EventCodingContext, for value: inout [Element], from connectionId: UUID) throws -> EventSyncHandlingResult {
         switch event {
+        case .insert(let path, let index, let data) where path.isEmpty:
+            guard value.indices.contains(index) || value.endIndex == index else {
+                throw ArrayEventHandlingError.intIndexReceivedOutOfBounds(index)
+            }
+            let element = try context.decode(data: data, as: Element.self)
+            value.insert(element, at: index)
+            return .alertRemainingConnections
         case .write(let path, let data) where path.isEmpty:
             value = try context.decode(data: data, as: Array<Element>.self)
             return .alertRemainingConnections
+        case .insert(let path, _, _):
+            guard case .some(.index(let index)) = path.first else {
+                throw ArrayEventHandlingError.expectedIntIndexInPathButReceivedSomethingElse
+            }
+            if value.indices.contains(index) {
+                return try elementStrategy.handle(event: event.oneLevelLower(), with: context, for: &value[index], from: connectionId)
+            } else {
+                throw ArrayEventHandlingError.intIndexReceivedOutOfBounds(index)
+            }
         case .write(let path, let data):
             guard case .some(.index(let index)) = path.first else {
                 throw ArrayEventHandlingError.expectedIntIndexInPathButReceivedSomethingElse
@@ -58,9 +76,26 @@ class ArrayStrategy<Element : Codable>: SyncStrategy {
     }
 
     func events(from previous: [Element], to next: [Element], with context: EventCodingContext, from connectionId: UUID) -> [InternalEvent] {
-        // TODO: More complex handling
-        guard let data = try? context.encode(next) else { return [] }
-        return [.write([], data)]
+        guard let equivalenceDetector = equivalenceDetector else {
+            guard let data = try? context.encode(next) else { return [] }
+            return [.write([], data)]
+        }
+
+        let differences = next.difference(from: previous) { equivalenceDetector.areEquivalent(lhs: $0, rhs: $1) }
+        guard differences.count < next.count else {
+            guard let data = try? context.encode(next) else { return [] }
+            return [.write([], data)]
+        }
+
+        return differences.compactMap { operation in
+            switch operation {
+            case .insert(let offset, let element, _):
+                guard let data = try? context.encode(element) else { return nil }
+                return .insert([], index: offset, data)
+            case .remove(offset: let offset, _, _):
+                return .delete([.index(offset)])
+            }
+        }
     }
 
     func subEvents(for value: [Element], with context: EventCodingContext, from connectionId: UUID) -> AnyPublisher<InternalEvent, Never> {
@@ -77,6 +112,7 @@ extension Array: HasErasedSyncStrategy where Element: Codable {}
 
 extension Array: SyncableType where Element: Codable {
     static var strategy: ArrayStrategy<Element> {
-        return ArrayStrategy(extractStrategy(for: Element.self))
+        let equivalenceDetector = extractEquivalenceDetector(for: Element.self)
+        return ArrayStrategy(extractStrategy(for: Element.self), equivalenceDetector: equivalenceDetector)
     }
 }

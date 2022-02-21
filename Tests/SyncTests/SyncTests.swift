@@ -95,6 +95,9 @@ class ViewModel: SyncedObject, Codable {
     var name = "Hello World!"
 
     @Synced
+    var names = ["A", "B"]
+
+    @Synced
     var subViewModels = [SubViewModel(), SubViewModel()]
 }
 
@@ -116,6 +119,11 @@ final class SyncTests: XCTestCase {
         serverViewModel.subViewModels[0].toggle = true
         XCTAssertEqual(clientViewModel.subViewModels[0].toggle, true)
         XCTAssertEqual(clientViewModel.subViewModels[1].toggle, false)
+
+        serverViewModel.names.insert("C", at: 1)
+        XCTAssertEqual(clientViewModel.names[0], "A")
+        XCTAssertEqual(clientViewModel.names[1], "C")
+        XCTAssertEqual(clientViewModel.names[2], "B")
     }
 
     func testMultipleClients() async throws {
@@ -134,5 +142,10 @@ final class SyncTests: XCTestCase {
         clientViewModel1.name = "Foo"
         XCTAssertEqual(serverViewModel.name, "Foo")
         XCTAssertEqual(clientViewModel2.name, "Foo")
+
+        clientViewModel2.names.insert("C", at: 1)
+        XCTAssertEqual(clientViewModel1.names[0], "A")
+        XCTAssertEqual(clientViewModel1.names[1], "C")
+        XCTAssertEqual(clientViewModel1.names[2], "B")
     }
 }

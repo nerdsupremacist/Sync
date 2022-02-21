@@ -16,6 +16,9 @@ let package = Package(
     targets: [
         .target(
             name: "Sync",
+            dependencies: ["CSyncHelpers"]),
+        .target(
+            name: "CSyncHelpers",
             dependencies: []),
         .testTarget(
             name: "SyncTests",

@@ -4,6 +4,7 @@ import Combine
 
 class SyncedObjectStrategy<Value: SyncedObject>: SyncStrategy {
     enum ObjectEventHandlingError: Error {
+        case cannotHandleInsertion
         case cannotDeleteSyncedObject
         case pathForObjectWasNotAStringLabel
         case syncedPropertyForLabelNotFound(String)
@@ -32,9 +33,11 @@ class SyncedObjectStrategy<Value: SyncedObject>: SyncStrategy {
 
     func handle(event: InternalEvent, with context: EventCodingContext, for value: inout Value, from connectionId: UUID) throws -> EventSyncHandlingResult {
         switch event {
+        case .insert(let path, _, _) where path.isEmpty:
+            throw ObjectEventHandlingError.cannotHandleInsertion
         case .delete(let path) where path.isEmpty:
             throw ObjectEventHandlingError.cannotDeleteSyncedObject
-        case .delete(let path), .write(let path, _):
+        case .delete(let path), .write(let path, _), .insert(let path, _, _):
             let strategiesPerPath = computeStrategies(for: value)
             guard case .some(.name(let label)) = path.first else {
                 throw ObjectEventHandlingError.pathForObjectWasNotAStringLabel
