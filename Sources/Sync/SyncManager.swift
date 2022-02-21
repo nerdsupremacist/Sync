@@ -12,10 +12,14 @@ public class SyncManager<Value: SyncableObject> {
         var object: Value? {
             return nil
         }
+
+        func set(value: Value) {
+            fatalError()
+        }
     }
 
     private final class RetainedStorage: BaseStorage {
-        let value: Value
+        private var value: Value
 
         init(value: Value) {
             self.value = value
@@ -23,11 +27,15 @@ public class SyncManager<Value: SyncableObject> {
 
         override var object: Value? {
             return value
+        }
+
+        override func set(value: Value) {
+            self.value = value
         }
     }
 
     private final class WeakStorage: BaseStorage {
-        weak var value: Value?
+        private weak var value: Value?
 
         init(value: Value) {
             self.value = value
@@ -35,6 +43,10 @@ public class SyncManager<Value: SyncableObject> {
 
         override var object: Value? {
             return value
+        }
+
+        override func set(value: Value) {
+            self.value = value
         }
     }
 
@@ -77,6 +89,21 @@ public class SyncManager<Value: SyncableObject> {
 
     public func data() throws -> Data {
         return try connection.codingContext.encode(try value())
+    }
+
+    @discardableResult
+    public func reconnect() async throws -> Bool {
+        guard let connection = connection as? ConsumerConnection else {
+            return false
+        }
+
+        connection.disconnect()
+        let data = try await connection.connect()
+        let value = try connection.codingContext.decode(data: data, as: Value.self)
+        storage.set(value: value)
+        setUpConnection()
+        hasChangedSubject.send()
+        return true
     }
     
     private func setUpConnection() {
