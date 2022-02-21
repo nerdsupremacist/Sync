@@ -78,6 +78,10 @@ fileprivate class SyncViewModel<Value : SyncableObject>: ObservableObject {
         self.reconnectionStrategy = nil
     }
 
+    deinit {
+        reconnectionTask?.cancel()
+    }
+
     func loadIfNeeded() async {
         switch state {
         case .synced:
@@ -98,6 +102,7 @@ fileprivate class SyncViewModel<Value : SyncableObject>: ObservableObject {
                         .filter { !$0 }
                         .receive(on: DispatchQueue.global())
                         .sink { [unowned self] _ in
+                            self.reconnectionTask?.cancel()
                             self.reconnectionTask = Task { [unowned self] in
                                 while case .attemptToReconnect = await reconnectionStrategy.maybeReconnect() {
                                     do {
