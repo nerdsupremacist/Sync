@@ -1,12 +1,10 @@
 
 import Foundation
-@_implementationOnly import CSyncHelpers
+@_implementationOnly import AssociatedTypeRequirementsVisitor
 
 func extractEquivalenceDetector<T>(for type: T.Type) -> AnyEquivalenceDetector<T>? {
-    if let conformanceRecord = ProtocolConformanceRecord(implementationType: type, protocolType: equatableType) {
-        let function = unsafeBitCast(makeEquatableEquivalenceDetectorFunction, to: MakeFunction<T>.self)
-        let typePointer = unsafeBitCast(type as Any.Type, to: UnsafeRawPointer.self)
-        return function(typePointer, conformanceRecord, conformanceRecord.witnessTable!).detector
+    if let equatableDetector = EquivalenceDetectorForEquatableFatory.detector(for: type) {
+        return equatableDetector.read()
     }
     if let type = type as? HasErasedErasedEquivalenceDetector.Type {
         return type.erasedEquivalenceDetector?.read()
@@ -23,56 +21,18 @@ extension SyncedObject {
     }
 }
 
-public struct _AnyEquivalenceDetectorBox<T> {
-    fileprivate let detector: AnyEquivalenceDetector<T>
-}
+private struct EquivalenceDetectorForEquatableFatory: EquatableTypeVisitor {
+    typealias Output = ErasedEquivalenceDetector
 
-private typealias MakeFunction<T> = @convention(thin) (UnsafeRawPointer, ProtocolConformanceRecord, UnsafeRawPointer) -> _AnyEquivalenceDetectorBox<T>
+    private static let shared = EquivalenceDetectorForEquatableFatory()
 
-@_silgen_name("_swift_sync_makeEquatableEquivalenceDetector")
-@available(*, unavailable)
-public func makeEquatableEquivalenceDetector<T: Equatable>(type: T.Type) -> _AnyEquivalenceDetectorBox<T> {
-    return _AnyEquivalenceDetectorBox(detector: AnyEquivalenceDetector(EquatableEquivalenceDetector()))
-}
+    private init() {}
 
-private let equatableType: Any.Type = {
-    return _typeByName("SQ")!
-}()
-
-private let makeEquatableEquivalenceDetectorFunction: UnsafeMutableRawPointer = {
-    return CSyncHelpers.makeEquatableEquivalenceDetector()
-}()
-
-private struct ProtocolConformanceRecord {
-    let type: Any.Type
-    let witnessTable: UnsafeRawPointer?
-}
-
-extension ProtocolConformanceRecord {
-
-    init?(implementationType: Any.Type, protocolType: Any.Type) {
-        let metadata = ProtocolMetadata(type: protocolType)
-        guard let witnessTable = _conformsToProtocol(implementationType, metadata.protocolDescriptorVector) else { return nil }
-        self.init(type: implementationType, witnessTable: witnessTable)
+    func callAsFunction<T>(_ type: T.Type) -> ErasedEquivalenceDetector where T : Equatable {
+        return ErasedEquivalenceDetector(EquatableEquivalenceDetector<T>())
     }
 
-}
-
-private struct ProtocolDescriptor { }
-
-private struct ProtocolMetadata {
-    let kind: Int
-    let layoutFlags: UInt32
-    let numberOfProtocols: UInt32
-    let protocolDescriptorVector: UnsafeMutablePointer<ProtocolDescriptor>
-
-    init(type: Any.Type) {
-        self = unsafeBitCast(type, to: UnsafeMutablePointer<Self>.self).pointee
+    public static func detector(for type: Any.Type) -> ErasedEquivalenceDetector? {
+        return shared(type)
     }
 }
-
-@_silgen_name("swift_conformsToProtocol")
-private func _conformsToProtocol(
-    _ type: Any.Type,
-    _ protocolDescriptor: UnsafeMutablePointer<ProtocolDescriptor>
-) -> UnsafeRawPointer?

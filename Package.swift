@@ -12,14 +12,14 @@ let package = Package(
             targets: ["Sync"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/nerdsupremacist/AssociatedTypeRequirementsKit.git", .upToNextMinor(from: "0.3.2")),
     ],
     targets: [
         .target(
             name: "Sync",
-            dependencies: ["CSyncHelpers"]),
-        .target(
-            name: "CSyncHelpers",
-            dependencies: []),
+            dependencies: [
+                .product(name: "AssociatedTypeRequirementsKit", package: "AssociatedTypeRequirementsKit"),
+            ]),
         .testTarget(
             name: "SyncTests",
             dependencies: ["Sync"]),
