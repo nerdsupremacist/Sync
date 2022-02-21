@@ -28,7 +28,7 @@ As of right now Sync works out of the box using WebSockets, however, it's not li
 
 The sky is the limit!
 
-**Warning:** This is only a proof of concept that I'm using for exeprimentation. I assume there's lots and lots of bugs in there...
+**Warning:** This is only a proof of concept that I'm using for experimentation. I assume there's lots and lots of bugs in there...
 
 ## Installation
 ### Swift Package Manager
