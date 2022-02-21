@@ -63,6 +63,8 @@ extension SyncedObject {
 }
 
 private final class FakeObservableObject: ObservableObject {
+    typealias ObjectWillChangePublisher = AnyPublisher<Void, Never>
+
     private let manualUpdate = PassthroughSubject<Void, Never>()
     private let manager: AnyManager
 
