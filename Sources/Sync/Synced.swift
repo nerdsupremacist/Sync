@@ -92,8 +92,10 @@ extension Synced: SelfContainedStrategy {
 
 extension Publisher {
 
-    fileprivate func withPrevious() -> AnyPublisher<(previous: Output?, current: Output), Failure> {
-        scan(Optional<(Output?, Output)>.none) { ($0?.1, $1) }
+    typealias OutputWithPrevious = (previous: Output?, current: Output)
+
+    fileprivate func withPrevious() -> AnyPublisher<OutputWithPrevious, Failure> {
+        scan(Optional<OutputWithPrevious>.none) { ($0?.current, $1) }
         .compactMap { $0 }
         .eraseToAnyPublisher()
     }
