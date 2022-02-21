@@ -103,7 +103,7 @@ public class SyncManager<Value: SyncedObject> {
 
         guard let value = storage.object else { return }
         strategy
-            .events(for: Just(value).eraseToAnyPublisher(),
+            .subEvents(for: value,
                     with: connection.codingContext,
                     from: self.id)
             .sink { [unowned self] event in

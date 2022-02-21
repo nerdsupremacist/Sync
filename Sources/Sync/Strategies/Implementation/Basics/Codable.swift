@@ -21,13 +21,12 @@ class CodableStrategy<Value : Codable>: SyncStrategy {
         return .alertRemainingConnections
     }
 
-    func events(for value: AnyPublisher<Value, Never>, with context: EventCodingContext, from connectionId: UUID) -> AnyPublisher<InternalEvent, Never> {
-        return value
-            .dropFirst()
-            .compactMap { value in
-                guard let data = try? context.encode(value) else { return nil }
-                return .write([], data)
-            }
-            .eraseToAnyPublisher()
+    func events(from previous: Value, to next: Value, with context: EventCodingContext, from connectionId: UUID) -> [InternalEvent] {
+        guard let data = try? context.encode(next) else { return [] }
+        return [.write([], data)]
+    }
+
+    func subEvents(for value: Value, with context: EventCodingContext, from connectionId: UUID) -> AnyPublisher<InternalEvent, Never> {
+        return Empty(completeImmediately: false).eraseToAnyPublisher()
     }
 }

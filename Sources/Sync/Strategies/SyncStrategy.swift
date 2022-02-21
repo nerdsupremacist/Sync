@@ -11,7 +11,9 @@ protocol SyncStrategy {
     associatedtype Value
 
     func handle(event: InternalEvent, with context: EventCodingContext, for value: inout Value, from connectionId: UUID) throws -> EventSyncHandlingResult
-    func events(for value: AnyPublisher<Value, Never>, with context: EventCodingContext, from connectionId: UUID) -> AnyPublisher<InternalEvent, Never>
+
+    func events(from previous: Value, to next: Value,  with context: EventCodingContext, from connectionId: UUID) -> [InternalEvent]
+    func subEvents(for value: Value, with context: EventCodingContext, from connectionId: UUID) -> AnyPublisher<InternalEvent, Never>
 }
 
 protocol SelfContainedStrategy {

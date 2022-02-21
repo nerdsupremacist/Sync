@@ -47,8 +47,28 @@ extension Synced: SelfContainedStrategy {
     }
 
     func events(with context: EventCodingContext, from connectionId: UUID) -> AnyPublisher<InternalEvent, Never> {
-        return strategy.events(for: publishers.publisher(for: connectionId, with: value), with: context, from: connectionId)
+        let strategy = strategy
+        return publishers
+            .publisher(for: connectionId, with: value)
+            .withPrevious()
+            .flatMap { [strategy] previous, current -> AnyPublisher<InternalEvent, Never> in
+                let events = previous.map { strategy.events(from: $0, to: current, with: context, from: connectionId) } ?? []
+                let immediate = Publishers.Sequence<[InternalEvent], Never>(sequence: events)
+                let future = strategy.subEvents(for: current, with: context, from: connectionId)
+                return immediate.merge(with: future).eraseToAnyPublisher()
+            }
+            .eraseToAnyPublisher()
     }
+}
+
+extension Publisher {
+
+    fileprivate func withPrevious() -> AnyPublisher<(previous: Output?, current: Output), Failure> {
+        scan(Optional<(Output?, Output)>.none) { ($0?.1, $1) }
+        .compactMap { $0 }
+        .eraseToAnyPublisher()
+    }
+
 }
 
 private class PublisherPerConnectionMap<Value> {
@@ -60,15 +80,15 @@ private class PublisherPerConnectionMap<Value> {
         publishers = publishers.filter { $0.value.value != nil }
     }
 
-    func publisher(for connectionId: UUID, with value: Value) -> AnyPublisher<Value, Never> {
+    func publisher(for connectionId: UUID, with value: Value) -> CurrentValueSubject<Value, Never> {
         purgeRemoved()
         if let publisher = publishers[connectionId]?.value {
-            return publisher.eraseToAnyPublisher()
+            return publisher
         }
 
         let publisher = CurrentValueSubject<Value, Never>(value)
         publishers[connectionId] = Weak(value: publisher)
-        return publisher.eraseToAnyPublisher()
+        return publisher
     }
 
     func alertAllConnections(value: Value) {

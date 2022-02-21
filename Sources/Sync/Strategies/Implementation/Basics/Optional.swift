@@ -42,16 +42,21 @@ class OptionalStrategy<Wrapped : Codable>: SyncStrategy {
         }
     }
 
-    func events(for value: AnyPublisher<Wrapped?, Never>, with context: EventCodingContext, from connectionId: UUID) -> AnyPublisher<InternalEvent, Never> {
-        return value.flatMap { value -> AnyPublisher<InternalEvent, Never> in
-            switch value {
-            case .none:
-                return Just(.delete([])).eraseToAnyPublisher()
-            case .some(let value):
-                return self.wrappedStrategy.events(for: Just(value).eraseToAnyPublisher(), with: context, from: connectionId)
-            }
+    func events(from previous: Wrapped?, to next: Wrapped?, with context: EventCodingContext, from connectionId: UUID) -> [InternalEvent] {
+        switch (previous, next) {
+        case (.some, .none):
+            return [.delete([])]
+        default:
+            guard let data = try? context.encode(next) else { return [] }
+            return [.write([], data)]
         }
-        .eraseToAnyPublisher()
+    }
+
+    func subEvents(for value: Wrapped?, with context: EventCodingContext, from connectionId: UUID) -> AnyPublisher<InternalEvent, Never> {
+        guard let value = value else {
+            return Empty(completeImmediately: false).eraseToAnyPublisher()
+        }
+        return wrappedStrategy.subEvents(for: value, with: context, from: connectionId)
     }
 }
 

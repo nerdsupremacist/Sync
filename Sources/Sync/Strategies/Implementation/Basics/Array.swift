@@ -57,15 +57,19 @@ class ArrayStrategy<Element : Codable>: SyncStrategy {
         }
     }
 
-    func events(for value: AnyPublisher<[Element], Never>, with context: EventCodingContext, from connectionId: UUID) -> AnyPublisher<InternalEvent, Never> {
-        return value.flatMap { elements -> AnyPublisher<InternalEvent, Never> in
-            let publishers = elements.enumerated().map { item -> AnyPublisher<InternalEvent, Never> in
-                let (offset, element) = item
-                return self.elementStrategy.events(for: Just(element).eraseToAnyPublisher(), with: context, from: connectionId)
-                    .map { $0.prefix(by: offset) }.eraseToAnyPublisher()
-            }
-            return Publishers.MergeMany(publishers).eraseToAnyPublisher()
-        }.eraseToAnyPublisher()
+    func events(from previous: [Element], to next: [Element], with context: EventCodingContext, from connectionId: UUID) -> [InternalEvent] {
+        // TODO: More complex handling
+        guard let data = try? context.encode(next) else { return [] }
+        return [.write([], data)]
+    }
+
+    func subEvents(for value: [Element], with context: EventCodingContext, from connectionId: UUID) -> AnyPublisher<InternalEvent, Never> {
+        let publishers = value.enumerated().map { item -> AnyPublisher<InternalEvent, Never> in
+            let (offset, element) = item
+            return self.elementStrategy.subEvents(for: element, with: context, from: connectionId)
+                .map { $0.prefix(by: offset) }.eraseToAnyPublisher()
+        }
+        return Publishers.MergeMany(publishers).eraseToAnyPublisher()
     }
 }
 

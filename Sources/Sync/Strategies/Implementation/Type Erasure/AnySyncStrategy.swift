@@ -8,7 +8,11 @@ class AnySyncStrategy<Value>: SyncStrategy {
             fatalError()
         }
 
-        func events(for value: AnyPublisher<Value, Never>, with context: EventCodingContext, from connectionId: UUID) -> AnyPublisher<InternalEvent, Never> {
+        func events(from previous: Value, to next: Value,  with context: EventCodingContext, from connectionId: UUID) -> [InternalEvent] {
+            fatalError()
+        }
+
+        func subEvents(for value: Value, with context: EventCodingContext, from connectionId: UUID) -> AnyPublisher<InternalEvent, Never> {
             fatalError()
         }
     }
@@ -24,8 +28,12 @@ class AnySyncStrategy<Value>: SyncStrategy {
             return try strategy.handle(event: event, with: context, for: &value, from: connectionId)
         }
 
-        override func events(for value: AnyPublisher<Value, Never>, with context: EventCodingContext, from connectionId: UUID) -> AnyPublisher<InternalEvent, Never> {
-            return strategy.events(for: value, with: context, from: connectionId)
+        override func events(from previous: Value, to next: Value,  with context: EventCodingContext, from connectionId: UUID) -> [InternalEvent] {
+            return strategy.events(from: previous, to: next, with: context, from: connectionId)
+        }
+
+        override func subEvents(for value: Value, with context: EventCodingContext, from connectionId: UUID) -> AnyPublisher<InternalEvent, Never> {
+            return strategy.subEvents(for: value, with: context, from: connectionId)
         }
     }
 
@@ -39,7 +47,11 @@ class AnySyncStrategy<Value>: SyncStrategy {
         return try storage.handle(event: event, with: context, for: &value, from: connectionId)
     }
 
-    func events(for value: AnyPublisher<Value, Never>, with context: EventCodingContext, from connectionId: UUID) -> AnyPublisher<InternalEvent, Never> {
-        return storage.events(for: value, with: context, from: connectionId)
+    func events(from previous: Value, to next: Value,  with context: EventCodingContext, from connectionId: UUID) -> [InternalEvent] {
+        return storage.events(from: previous, to: next, with: context, from: connectionId)
+    }
+    
+    func subEvents(for value: Value, with context: EventCodingContext, from connectionId: UUID) -> AnyPublisher<InternalEvent, Never> {
+        return storage.subEvents(for: value, with: context, from: connectionId)
     }
 }

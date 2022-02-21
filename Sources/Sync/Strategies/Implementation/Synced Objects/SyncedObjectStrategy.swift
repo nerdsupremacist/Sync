@@ -47,17 +47,18 @@ class SyncedObjectStrategy<Value: SyncedObject>: SyncStrategy {
         }
     }
 
-    func events(for value: AnyPublisher<Value, Never>, with context: EventCodingContext, from connectionId: UUID) -> AnyPublisher<InternalEvent, Never> {
-        return value
-            .flatMap { [unowned self] value -> AnyPublisher<InternalEvent, Never> in
-                let strategiesPerPath = self.computeStrategies(for: value)
-                let publishers = strategiesPerPath.map { item -> AnyPublisher<InternalEvent, Never> in
-                    let (label, strategy) = item
-                    return strategy.events(with: context, from: connectionId).map { $0.prefix(by: label) }.eraseToAnyPublisher()
-                }
+    func events(from previous: Value, to next: Value, with context: EventCodingContext, from connectionId: UUID) -> [InternalEvent] {
+        guard let data = try? context.encode(next) else { return [] }
+        return [.write([], data)]
+    }
 
-                return Publishers.MergeMany(publishers).eraseToAnyPublisher()
-            }
-            .eraseToAnyPublisher()
+    func subEvents(for value: Value, with context: EventCodingContext, from connectionId: UUID) -> AnyPublisher<InternalEvent, Never> {
+        let strategiesPerPath = self.computeStrategies(for: value)
+        let publishers = strategiesPerPath.map { item -> AnyPublisher<InternalEvent, Never> in
+            let (label, strategy) = item
+            return strategy.events(with: context, from: connectionId).map { $0.prefix(by: label) }.eraseToAnyPublisher()
+        }
+
+        return Publishers.MergeMany(publishers).eraseToAnyPublisher()
     }
 }
