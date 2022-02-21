@@ -97,7 +97,9 @@ public class SyncManager<Value: SyncableObject> {
             return false
         }
 
-        connection.disconnect()
+        if connection.isConnected {
+            connection.disconnect()
+        }
         let data = try await connection.connect()
         let value = try connection.codingContext.decode(data: data, as: Value.self)
         storage.set(value: value)
