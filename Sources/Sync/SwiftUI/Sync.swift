@@ -3,14 +3,20 @@ import Foundation
 
 #if canImport(SwiftUI)
 import SwiftUI
+import OpenCombineShim
+
 
 public struct Sync<Value : SyncableObject, Content : View>: View {
     @StateObject
     private var viewModel: SyncViewModel<Value>
     private let content: (SyncedObject<Value>) -> Content
 
-    public init(_ type: Value.Type, using connection: ConsumerConnection, @ViewBuilder content: @escaping (SyncedObject<Value>) -> Content) {
-        self._viewModel = StateObject(wrappedValue: SyncViewModel(connection: connection))
+    public init(_ type: Value.Type,
+                using connection: ConsumerConnection,
+                reconnectionStrategy: ReconnectionStrategy = .tryAgain,
+                @ViewBuilder content: @escaping (SyncedObject<Value>) -> Content) {
+
+        self._viewModel = StateObject(wrappedValue: SyncViewModel(connection: connection, reconnectionStrategy: reconnectionStrategy))
         self.content = content
     }
 
@@ -22,6 +28,7 @@ public struct Sync<Value : SyncableObject, Content : View>: View {
     public var body: some View {
         if let synced = viewModel.synced {
             content(synced)
+                .disabled(!synced.connection.isConnected)
         } else if let error = viewModel.error {
             Text(error.localizedDescription)
         } else {
@@ -50,6 +57,10 @@ fileprivate class SyncViewModel<Value : SyncableObject>: ObservableObject {
     @Published
     private(set) var error: Error?
 
+    private var cancellables: Set<AnyCancellable> = []
+    private let reconnectionStrategy: ReconnectionStrategy?
+    private var reconnectionTask: Task<Void, Never>? = nil
+
     var synced: SyncedObject<Value>? {
         switch state {
         case .synced(let object):
@@ -59,12 +70,14 @@ fileprivate class SyncViewModel<Value : SyncableObject>: ObservableObject {
         }
     }
 
-    init(connection: ConsumerConnection) {
+    init(connection: ConsumerConnection, reconnectionStrategy: ReconnectionStrategy?) {
         self.state = .loading(connection)
+        self.reconnectionStrategy = reconnectionStrategy
     }
 
     init(syncManager: SyncManager<Value>) {
         self.state = .synced(try! SyncedObject(syncManager: syncManager))
+        self.reconnectionStrategy = nil
     }
 
     func loadIfNeeded() async {
@@ -75,8 +88,31 @@ fileprivate class SyncViewModel<Value : SyncableObject>: ObservableObject {
             guard !isLoading else { return }
             isLoading = true
             do {
+                reconnectionTask?.cancel()
+                cancellables = []
                 let manager = try await Value.sync(with: connection)
-                let state: State = await .synced(try SyncedObject(syncManager: manager))
+                let object = try await SyncedObject(syncManager: manager)
+                if let reconnectionStrategy = reconnectionStrategy {
+                    connection
+                        .isConnectedPublisher
+                        .removeDuplicates()
+                        .filter { !$0 }
+                        .receive(on: DispatchQueue.global())
+                        .sink { [unowned self] _ in
+                            self.reconnectionTask = Task { [unowned self] in
+                                while case .attemptToReconnect = await reconnectionStrategy.maybeReconnect() {
+                                    do {
+                                        _ = try await manager.reconnect()
+                                        break
+                                    } catch {
+                                        self.error = error
+                                    }
+                                }
+                            }
+                        }
+                        .store(in: &cancellables)
+                }
+                let state: State = .synced(object)
                 DispatchQueue.main.async { [weak self] in
                     self?.state = state
                 }
