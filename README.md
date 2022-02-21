@@ -62,7 +62,7 @@ For this we will need a few additional packages:
 
 Let's start by building our shared ViewModel. This is easy, instead of using `ObservableObject` we use `SyncedObject`. And instead of `Published` we use `Synced`:
 ```swift
-class ViewModel: SyncedObject {
+class ViewModel: SyncableObject {
     @Synced
     var toggle: Bool = false
 
@@ -95,7 +95,7 @@ For our SwiftUI App, we need to use two things:
 Our actual view then uses SyncedObservedObject with our ViewModel
 ```swift
 struct ContentView: View {
-    @SyncedObservedObject
+    @SyncedObject
     var viewModel: ViewModel
 
     var body: some View {

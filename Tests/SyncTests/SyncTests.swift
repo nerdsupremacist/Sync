@@ -7,7 +7,7 @@ class MockServerConnection: ProducerConnection {
         return true
     }
 
-    let codingContext: EventCodingContext = JSONEventCodingContext()
+    let codingContext: EventCodingContext = .json
     private let inputSubject = PassthroughSubject<Data, Never>()
     private let outputSubject = PassthroughSubject<Data, Never>()
 
@@ -33,7 +33,7 @@ class MockServerConnection: ProducerConnection {
 }
 
 class MockClientConnection: ConsumerConnection {
-    let codingContext: EventCodingContext = JSONEventCodingContext()
+    let codingContext: EventCodingContext = .json
     let service: MockRemoteService
     var serverConnection: MockServerConnection? = nil
 
