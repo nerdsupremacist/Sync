@@ -110,7 +110,7 @@ And in order to display it we use Sync, and pass along the Web Socket Connection
 ```swift
 struct RootView: View {
     var body: some View {
-        Sync(ViewModel.self, using: WebSocketClientConnection(url: url)) { viewModel in
+        Sync(ViewModel.self, using: .webSocket(url: url)) { viewModel in
             ContentView(viewModel: viewModel)
         }
     }
