@@ -108,7 +108,7 @@ fileprivate class SyncViewModel<Value : SyncableObject>: ObservableObject {
                                     do {
                                         _ = try await manager.reconnect()
                                         let updateTask = Task { @MainActor in
-                                            object.value = try manager.value()
+                                            object.forceUpdate(value: try manager.value())
                                         }
                                         try await updateTask.value
                                         return

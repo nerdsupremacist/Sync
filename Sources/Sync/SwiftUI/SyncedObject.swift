@@ -5,18 +5,12 @@ import Combine
 
 @dynamicMemberLookup
 @propertyWrapper
-public struct SyncedObject<Value : SyncableObject>: DynamicProperty {
+public class SyncedObject<Value : SyncableObject>: DynamicProperty {
     @ObservedObject
     private var fakeObservable: FakeObservableObject
 
     private let manager: AnyManager
-
-    @State
-    var value: Value {
-        didSet {
-            fakeObservable.forceUpdate()
-        }
-    }
+    private var value: Value
 
     public var wrappedValue: Value {
         get {
@@ -30,8 +24,13 @@ public struct SyncedObject<Value : SyncableObject>: DynamicProperty {
         self.manager = manager
     }
 
-    init(syncManager: SyncManager<Value>) throws {
+    convenience init(syncManager: SyncManager<Value>) throws {
         self.init(value: try syncManager.value(), manager: Manager(manager: syncManager))
+    }
+
+    func forceUpdate(value: Value) {
+        self.value = value
+        fakeObservable.forceUpdate()
     }
 }
 
@@ -58,7 +57,7 @@ extension SyncedObject {
     }
 
     public subscript<Subject : Codable>(dynamicMember keyPath: WritableKeyPath<Value, Subject>) -> Binding<Subject> {
-        return Binding(get: { value[keyPath: keyPath] }, set: { value[keyPath: keyPath] = $0 })
+        return Binding(get: { self.value[keyPath: keyPath] }, set: { self.value[keyPath: keyPath] = $0 })
     }
 
 }
