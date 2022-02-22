@@ -56,12 +56,11 @@ class SyncableObjectStrategy<Value: SyncableObject>: SyncStrategy {
     }
 
     func subEvents(for value: Value, with context: EventCodingContext, from connectionId: UUID) -> AnyPublisher<InternalEvent, Never> {
-        let strategiesPerPath = self.computeStrategies(for: value)
-        let publishers = strategiesPerPath.map { item -> AnyPublisher<InternalEvent, Never> in
-            let (label, strategy) = item
-            return strategy.events(with: context, from: connectionId).map { $0.prefix(by: label) }.eraseToAnyPublisher()
-        }
-
-        return Publishers.MergeMany(publishers).eraseToAnyPublisher()
+        return computeStrategies(for: value)
+            .map { item -> AnyPublisher<InternalEvent, Never> in
+                let (label, strategy) = item
+                return strategy.events(with: context, from: connectionId).map { $0.prefix(by: label) }.eraseToAnyPublisher()
+            }
+            .mergeMany()
     }
 }

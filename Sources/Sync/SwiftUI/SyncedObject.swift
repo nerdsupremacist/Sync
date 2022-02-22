@@ -1,7 +1,7 @@
 
 #if canImport(SwiftUI)
 import SwiftUI
-import Combine
+import OpenCombineShim
 
 @dynamicMemberLookup
 @propertyWrapper
@@ -67,23 +67,25 @@ extension SyncedObject {
 }
 
 private final class FakeObservableObject: ObservableObject {
-    typealias ObjectWillChangePublisher = AnyPublisher<Void, Never>
-
     private let manualUpdate = PassthroughSubject<Void, Never>()
     private let manager: AnyManager
 
-    let objectWillChange: AnyPublisher<Void, Never>
+    let objectWillChange = ObservableObjectPublisher()
+    private var cancellables: Set<AnyCancellable> = []
 
     init(manager: AnyManager) {
         self.manager = manager
         let changeEvents = manager.eventHasChanged
         let connectionChange = manager.connection.isConnectedPublisher.removeDuplicates().map { _ in () }
 
-        objectWillChange = changeEvents
+        changeEvents
             .merge(with: connectionChange)
             .merge(with: manualUpdate)
+            #if canImport(SwiftUI)
             .receive(on: DispatchQueue.main)
-            .eraseToAnyPublisher()
+            #endif
+            .sink { [unowned self] in objectWillChange.send() }
+            .store(in: &cancellables)
     }
 
     func forceUpdate() {

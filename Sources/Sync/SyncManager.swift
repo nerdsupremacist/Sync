@@ -1,7 +1,6 @@
 
 import Foundation
 import OpenCombineShim
-import SwiftUI
 
 public class SyncManager<Value: SyncableObject> {
     enum SyncManagerError: Error {

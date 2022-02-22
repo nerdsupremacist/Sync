@@ -1,11 +1,15 @@
 
 import Foundation
+#if canImport(AssociatedTypeRequirementsVisitor)
 @_implementationOnly import AssociatedTypeRequirementsVisitor
+#endif
 
 func extractEquivalenceDetector<T>(for type: T.Type) -> AnyEquivalenceDetector<T>? {
+    #if canImport(AssociatedTypeRequirementsVisitor)
     if let equatableDetector = EquivalenceDetectorForEquatableFatory.detector(for: type) {
         return equatableDetector.read()
     }
+    #endif
     if let type = type as? HasErasedErasedEquivalenceDetector.Type {
         return type.erasedEquivalenceDetector?.read()
     }
@@ -21,6 +25,7 @@ extension SyncableObject {
     }
 }
 
+#if canImport(AssociatedTypeRequirementsVisitor)
 private struct EquivalenceDetectorForEquatableFatory: EquatableTypeVisitor {
     typealias Output = ErasedEquivalenceDetector
 
@@ -36,3 +41,4 @@ private struct EquivalenceDetectorForEquatableFatory: EquatableTypeVisitor {
         return shared(type)
     }
 }
+#endif

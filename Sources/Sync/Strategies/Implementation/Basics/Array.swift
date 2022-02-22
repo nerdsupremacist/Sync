@@ -99,12 +99,14 @@ class ArrayStrategy<Element : Codable>: SyncStrategy {
     }
 
     func subEvents(for value: [Element], with context: EventCodingContext, from connectionId: UUID) -> AnyPublisher<InternalEvent, Never> {
-        let publishers = value.enumerated().map { item -> AnyPublisher<InternalEvent, Never> in
-            let (offset, element) = item
-            return self.elementStrategy.subEvents(for: element, with: context, from: connectionId)
-                .map { $0.prefix(by: offset) }.eraseToAnyPublisher()
-        }
-        return Publishers.MergeMany(publishers).eraseToAnyPublisher()
+        return value
+            .enumerated()
+            .map { item -> AnyPublisher<InternalEvent, Never> in
+                let (offset, element) = item
+                return self.elementStrategy.subEvents(for: element, with: context, from: connectionId)
+                    .map { $0.prefix(by: offset) }.eraseToAnyPublisher()
+            }
+            .mergeMany()
     }
 }
 

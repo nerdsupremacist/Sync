@@ -1,6 +1,4 @@
 
-import Foundation
-
 #if canImport(SwiftUI)
 import SwiftUI
 import OpenCombineShim
@@ -93,6 +91,7 @@ fileprivate class SyncViewModel<Value : SyncableObject>: ObservableObject {
                 reconnectionTask?.cancel()
                 cancellables = []
                 let manager = try await Value.sync(with: connection)
+                // For some reason Swift says this needs an await ¯\_(ツ)_/¯
                 let object = try await SyncedObject(syncManager: manager)
 
                 if let reconnectionStrategy = reconnectionStrategy {
