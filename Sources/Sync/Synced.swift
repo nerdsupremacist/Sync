@@ -45,6 +45,10 @@ public final class Synced<Value : Codable>: Codable {
         return publisher.map(\.value).eraseToAnyPublisher()
     }
 
+    public var projectedValue: Synced<Value> {
+        return self
+    }
+
     init(value: Value) {
         self.value = value
         self.publisher = CurrentValueSubject(.local(value))
