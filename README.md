@@ -124,6 +124,11 @@ Here are the Web Assembly specific packages for Sync:
 - [SyncTokamak](https://github.com/nerdsupremacist/SyncTokamak): Compatibility Layer so that Tokamak reacts to updates
 - [SyncWebSocketWebAssemblyClient](https://github.com/nerdsupremacist/SyncWebSocketWebAssemblyClient): Web Assembly compatible version of [SyncWebSocketClient](https://github.com/nerdsupremacist/SyncWebSocketClient)
 
+Here's a small demo of that working:
+<p align="center">
+    <img src="https://github.com/nerdsupremacist/SyncTokamak/raw/main/demo.gif" width="600" max-width="90%" alt="Sync" />
+</p>
+
 ## Contributions
 Contributions are welcome and encouraged!
 
