@@ -117,6 +117,13 @@ struct RootView: View {
 }
 ```
 
+### Developing for Web?
+
+No problem. You can scale this solution to the web using [Tokamak](https://github.com/TokamakUI/Tokamak), and use the same UI on the Web thanks to Web Assembly.
+Here are the Web Assembly specific packages for Sync:
+- [SyncTokamak](https://github.com/nerdsupremacist/SyncTokamak): Compatibility Layer so that Tokamak reacts to updates
+- [SyncWebSocketWebAssemblyClient](https://github.com/nerdsupremacist/SyncWebSocketWebAssemblyClient): Web Assembly compatible version of [SyncWebSocketClient](https://github.com/nerdsupremacist/SyncWebSocketClient)
+
 ## Contributions
 Contributions are welcome and encouraged!
 
