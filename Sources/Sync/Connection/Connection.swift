@@ -1,6 +1,6 @@
 
 import Foundation
-import OpenCombineShim
+@_exported import OpenCombineShim
 
 public protocol Connection {
     var isConnected: Bool { get }

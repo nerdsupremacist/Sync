@@ -1,6 +1,6 @@
 
 import Foundation
-import OpenCombineShim
+@_exported import OpenCombineShim
 
 enum EventSyncHandlingResult {
     case done

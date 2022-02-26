@@ -1,6 +1,6 @@
 
 import Foundation
-import OpenCombineShim
+@_exported import OpenCombineShim
 
 class ArrayStrategy<Element : Codable>: SyncStrategy {
     enum ArrayEventHandlingError: Error {

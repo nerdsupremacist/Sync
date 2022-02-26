@@ -1,6 +1,6 @@
 
 import Foundation
-import OpenCombineShim
+@_exported import OpenCombineShim
 
 public class SyncManager<Value: SyncableObject> {
     enum SyncManagerError: Error {

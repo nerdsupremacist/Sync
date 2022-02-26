@@ -1,6 +1,6 @@
 
 import Foundation
-import OpenCombineShim
+@_exported import OpenCombineShim
 
 @propertyWrapper
 public final class Synced<Value : Codable>: Codable {

@@ -1,7 +1,7 @@
 
 #if canImport(SwiftUI)
 import SwiftUI
-import OpenCombineShim
+@_exported import OpenCombineShim
 
 @dynamicMemberLookup
 @propertyWrapper
