@@ -8,7 +8,7 @@ public struct Sync<Value : SyncableObject, Content : View>: View {
     private var viewModel: SyncViewModel<Value>
     private let content: (SyncedObject<Value>) -> Content
 
-    public init(_ type: Value.Type,
+    public init(_ type: Value.Type = Value.self,
                 using connection: ConsumerConnection,
                 reconnectionStrategy: ReconnectionStrategy? = nil,
                 @ViewBuilder content: @escaping (SyncedObject<Value>) -> Content) {
@@ -17,7 +17,10 @@ public struct Sync<Value : SyncableObject, Content : View>: View {
         self.content = content
     }
 
-    public init(_ type: Value.Type, using syncManager: SyncManager<Value>, @ViewBuilder content: @escaping (SyncedObject<Value>) -> Content) {
+    public init(_ type: Value.Type = Value.self,
+                using syncManager: SyncManager<Value>,
+                @ViewBuilder content: @escaping (SyncedObject<Value>) -> Content) {
+        
         self._viewModel = StateObject(wrappedValue: SyncViewModel(syncManager: syncManager))
         self.content = content
     }
@@ -105,7 +108,7 @@ fileprivate class SyncViewModel<Value : SyncableObject>: ObservableObject {
                             self.reconnectionTask = Task { [unowned self] in
                                 while case .attemptToReconnect = await reconnectionStrategy.maybeReconnect() {
                                     do {
-                                        _ = try await manager.reconnect()
+                                        guard try await manager.reconnect() else { return }
                                         let updateTask = Task { @MainActor in
                                             object.forceUpdate(value: try manager.value())
                                         }
