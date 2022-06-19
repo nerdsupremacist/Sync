@@ -106,6 +106,9 @@ class ViewModel: SyncableObject, Codable {
 
     @Synced
     var subViewModels = [SubViewModel(), SubViewModel()]
+
+    @Synced(.protected)
+    var protectedString = "This string is protected"
 }
 
 final class SyncTests: XCTestCase {
@@ -117,6 +120,19 @@ final class SyncTests: XCTestCase {
         let clientViewModel = try clientManager.value()
 
         XCTAssertEqual(clientViewModel.name, "Hello World!")
+
+        clientViewModel.name = "hello, World!!"
+        XCTAssertEqual(serverViewModel.name, "hello, World!!")
+
+        XCTAssertEqual(clientViewModel.protectedString, "This string is protected")
+        clientViewModel.protectedString = "test"
+        XCTAssertEqual(clientViewModel.protectedString, "This string is protected")
+        XCTAssertEqual(serverViewModel.protectedString, "This string is protected")
+
+        serverViewModel.protectedString = "still protected"
+        XCTAssertEqual(clientViewModel.protectedString, "still protected")
+        XCTAssertEqual(serverViewModel.protectedString, "still protected")
+
         clientViewModel.name = "Foo"
         XCTAssertEqual(serverViewModel.name, "Foo")
 

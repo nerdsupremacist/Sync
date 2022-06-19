@@ -17,7 +17,7 @@ class OptionalStrategy<Wrapped : Codable>: SyncStrategy {
         self.wrappedStrategy = wrappedStrategy
     }
 
-    func handle(event: InternalEvent, with context: EventCodingContext, for value: inout Wrapped?, from connectionId: UUID) throws -> EventSyncHandlingResult {
+    func handle(event: InternalEvent, from context: ConnectionContext, for value: inout Wrapped?) throws -> EventSyncHandlingResult {
         switch event {
         case .insert(let path, _, _) where path.isEmpty:
             throw OptionalEventHandlingError.cannotHandleInsertion
@@ -28,18 +28,18 @@ class OptionalStrategy<Wrapped : Codable>: SyncStrategy {
             guard case .some(var wrapped) = value else {
                 throw OptionalEventHandlingError.cannotPropagateDeletionToSubPathOfNil
             }
-            let result = try wrappedStrategy.handle(event: event, with: context, for: &wrapped, from: connectionId)
+            let result = try wrappedStrategy.handle(event: event, from: context, for: &wrapped)
             value = wrapped
             return result
         case .write(let path, let data):
             switch value {
             case .none where path.isEmpty:
-                value = try context.decode(data: data, as: Wrapped.self)
+                value = try context.codingContext.decode(data: data, as: Wrapped.self)
                 return .alertRemainingConnections
             case .none:
                 throw OptionalEventHandlingError.cannotPropagateWriteToSubPathOfNil
             case .some(var wrapped):
-                let result = try wrappedStrategy.handle(event: event, with: context, for: &wrapped, from: connectionId)
+                let result = try wrappedStrategy.handle(event: event, from: context, for: &wrapped)
                 value = wrapped
                 return result
             }
@@ -48,28 +48,28 @@ class OptionalStrategy<Wrapped : Codable>: SyncStrategy {
             case .none:
                 throw OptionalEventHandlingError.cannotPropagateInsertionToSubPathOfNil
             case .some(var wrapped):
-                let result = try wrappedStrategy.handle(event: event, with: context, for: &wrapped, from: connectionId)
+                let result = try wrappedStrategy.handle(event: event, from: context, for: &wrapped)
                 value = wrapped
                 return result
             }
         }
     }
 
-    func events(from previous: Wrapped?, to next: Wrapped?, with context: EventCodingContext, from connectionId: UUID) -> [InternalEvent] {
+    func events(from previous: Wrapped?, to next: Wrapped?, for context: ConnectionContext) -> [InternalEvent] {
         switch (previous, next) {
         case (.some, .none):
             return [.delete([])]
         default:
-            guard let data = try? context.encode(next) else { return [] }
+            guard let data = try? context.codingContext.encode(next) else { return [] }
             return [.write([], data)]
         }
     }
 
-    func subEvents(for value: Wrapped?, with context: EventCodingContext, from connectionId: UUID) -> AnyPublisher<InternalEvent, Never> {
+    func subEvents(for value: Wrapped?, for context: ConnectionContext) -> AnyPublisher<InternalEvent, Never> {
         guard let value = value else {
             return Empty(completeImmediately: false).eraseToAnyPublisher()
         }
-        return wrappedStrategy.subEvents(for: value, with: context, from: connectionId)
+        return wrappedStrategy.subEvents(for: value, for: context)
     }
 }
 

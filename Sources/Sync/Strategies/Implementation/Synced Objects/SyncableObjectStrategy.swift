@@ -31,7 +31,7 @@ class SyncableObjectStrategy<Value: SyncableObject>: SyncStrategy {
         return strategiesPerPath
     }
 
-    func handle(event: InternalEvent, with context: EventCodingContext, for value: inout Value, from connectionId: UUID) throws -> EventSyncHandlingResult {
+    func handle(event: InternalEvent, from context: ConnectionContext, for value: inout Value) throws -> EventSyncHandlingResult {
         switch event {
         case .insert(let path, _, _) where path.isEmpty:
             throw ObjectEventHandlingError.cannotHandleInsertion
@@ -45,21 +45,21 @@ class SyncableObjectStrategy<Value: SyncableObject>: SyncStrategy {
             guard let strategy = strategiesPerPath[label] else {
                 throw ObjectEventHandlingError.syncedPropertyForLabelNotFound(label)
             }
-            try strategy.handle(event: event.oneLevelLower(), with: context, from: connectionId)
+            try strategy.handle(event: event.oneLevelLower(), from: context)
             return .done
         }
     }
 
-    func events(from previous: Value, to next: Value, with context: EventCodingContext, from connectionId: UUID) -> [InternalEvent] {
-        guard let data = try? context.encode(next) else { return [] }
+    func events(from previous: Value, to next: Value, for context: ConnectionContext) -> [InternalEvent] {
+        guard let data = try? context.codingContext.encode(next) else { return [] }
         return [.write([], data)]
     }
 
-    func subEvents(for value: Value, with context: EventCodingContext, from connectionId: UUID) -> AnyPublisher<InternalEvent, Never> {
+    func subEvents(for value: Value, for context: ConnectionContext) -> AnyPublisher<InternalEvent, Never> {
         return computeStrategies(for: value)
             .map { item -> AnyPublisher<InternalEvent, Never> in
                 let (label, strategy) = item
-                return strategy.events(with: context, from: connectionId).map { $0.prefix(by: label) }.eraseToAnyPublisher()
+                return strategy.events(for: context).map { $0.prefix(by: label) }.eraseToAnyPublisher()
             }
             .mergeMany()
     }

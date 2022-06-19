@@ -2,6 +2,17 @@
 import Foundation
 @_exported import OpenCombineShim
 
+enum ConnectionType {
+    case consumer
+    case producer
+}
+
+struct BasicConnectionContext: ConnectionContext {
+    let id: UUID
+    let connection: Connection
+    let type: ConnectionType
+}
+
 public class SyncManager<Value: SyncableObject> {
     enum SyncManagerError: Error {
         case unretainedValueWasReleased
@@ -50,6 +61,7 @@ public class SyncManager<Value: SyncableObject> {
     }
 
     private let id = UUID()
+    private let connectionType: ConnectionType
     private let strategy: AnySyncStrategy<Value>
     private let storage: BaseStorage
     public let connection: Connection
@@ -65,17 +77,19 @@ public class SyncManager<Value: SyncableObject> {
         return hasChangedSubject.eraseToAnyPublisher()
     }
 
-    init(_ value: Value, connection: Connection) {
+    init(_ value: Value, connection: Connection, connectionType: ConnectionType) {
         self.strategy = extractStrategy(for: Value.self)
         self.storage = RetainedStorage(value: value)
         self.connection = connection
+        self.connectionType = connectionType
         setUpConnection()
     }
 
-    init(weak value: Value, connection: Connection) {
+    init(weak value: Value, connection: Connection, connectionType: ConnectionType) {
         self.strategy = extractStrategy(for: Value.self)
         self.storage = WeakStorage(value: value)
         self.connection = connection
+        self.connectionType = connectionType
         setUpConnection()
     }
 
@@ -113,6 +127,7 @@ public class SyncManager<Value: SyncableObject> {
     }
     
     private func setUpConnection() {
+        let context = BasicConnectionContext(id: id, connection: connection, type: connectionType)
         cancellables = []
         connection
             .receive()
@@ -120,9 +135,10 @@ public class SyncManager<Value: SyncableObject> {
                 do {
                     var value = try self.value()
                     let event = try self.connection.codingContext.decode(data: data, as: InternalEvent.self)
-                    _ = try self.strategy.handle(event: event, with: self.connection.codingContext, for: &value, from: self.id)
+                    _ = try self.strategy.handle(event: event, from: context, for: &value)
                     self.hasChangedSubject.send()
                 } catch {
+                    self.connection.disconnect()
                     self.errorsSubject.send(error)
                 }
             }
@@ -131,14 +147,14 @@ public class SyncManager<Value: SyncableObject> {
         guard let value = storage.object else { return }
         strategy
             .subEvents(for: value,
-                    with: connection.codingContext,
-                    from: self.id)
+                       for: context)
             .sink { [unowned self] event in
                 do {
                     self.hasChangedSubject.send()
                     let data = try self.connection.codingContext.encode(event)
                     self.connection.send(data: data)
                 } catch {
+                    self.connection.disconnect()
                     self.errorsSubject.send(error)
                 }
             }
