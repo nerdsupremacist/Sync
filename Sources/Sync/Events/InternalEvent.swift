@@ -41,7 +41,7 @@ enum InternalEvent {
 }
 
 extension PathComponent: Codable {
-    private enum Kind: Int, Codable {
+    private enum Kind: Int8, Codable {
         case label
         case index
     }
@@ -71,7 +71,7 @@ extension PathComponent: Codable {
 }
 
 extension InternalEvent: Codable {
-    private enum Kind: Int, Codable {
+    private enum Kind: Int8, Codable {
         case write
         case delete
         case insert

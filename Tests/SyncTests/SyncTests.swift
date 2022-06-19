@@ -10,7 +10,6 @@ class MockServerConnection: ProducerConnection {
         return Empty().eraseToAnyPublisher()
     }
 
-    let codingContext: EventCodingContext = .json
     private let inputSubject = PassthroughSubject<Data, Never>()
     private let outputSubject = PassthroughSubject<Data, Never>()
 
@@ -36,7 +35,6 @@ class MockServerConnection: ProducerConnection {
 }
 
 class MockClientConnection: ConsumerConnection {
-    let codingContext: EventCodingContext = .json
     let service: MockRemoteService
     var serverConnection: MockServerConnection? = nil
 

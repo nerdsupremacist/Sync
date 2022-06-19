@@ -14,6 +14,14 @@ public protocol Connection {
     func receive() -> AnyPublisher<Data, Never>
 }
 
+extension Connection {
+
+    public var codingContext: EventCodingContext {
+        return .default
+    }
+
+}
+
 public protocol ConsumerConnection: Connection {
     func connect() async throws -> Data
 }

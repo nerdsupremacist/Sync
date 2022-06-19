@@ -2,7 +2,7 @@
 import Foundation
 import OpenCombineShim
 
-public enum EventBusWriteOwnership: Codable {
+public enum EventBusWriteOwnership: Int8, Codable {
     case shared
     case producer
     case consumer

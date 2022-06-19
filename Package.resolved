@@ -11,6 +11,15 @@
         }
       },
       {
+        "package": "MessagePack",
+        "repositoryURL": "https://github.com/Flight-School/MessagePack.git",
+        "state": {
+          "branch": null,
+          "revision": "bbc5ab6362db234f2051e73e67296ebf5c3d2042",
+          "version": "1.2.4"
+        }
+      },
+      {
         "package": "OpenCombine",
         "repositoryURL": "https://github.com/OpenCombine/OpenCombine.git",
         "state": {

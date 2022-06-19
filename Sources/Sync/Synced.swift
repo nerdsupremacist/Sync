@@ -3,7 +3,7 @@ import Foundation
 @_exported import OpenCombineShim
 import Accessibility
 
-public enum SyncedWriteRights: Codable {
+public enum SyncedWriteRights: UInt8, Codable {
     case shared
     case protected
 }
