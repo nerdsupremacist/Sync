@@ -2,6 +2,12 @@
 import Foundation
 import OpenCombineShim
 
+public enum EventBusWriteOwnership: Codable {
+    case shared
+    case producer
+    case consumer
+}
+
 public final class EventBus<Event : Codable>: Codable {
     enum EventBusEventHandlingError: Error {
         case writeAtSubpathNotAllowed
@@ -9,6 +15,8 @@ public final class EventBus<Event : Codable>: Codable {
         case insertNotAllowed
     }
 
+    private let ownership: EventBusWriteOwnership
+    private let canWrite: Bool
     private let outgoingEventSubject = PassthroughSubject<Event, Never>()
     private let incomingEventSubject = PassthroughSubject<Event, Never>()
 
@@ -16,16 +24,24 @@ public final class EventBus<Event : Codable>: Codable {
         return incomingEventSubject.eraseToAnyPublisher()
     }
 
-    public init() { }
+    private init(ownership: EventBusWriteOwnership, canWrite: Bool) {
+        self.ownership = ownership
+        self.canWrite = canWrite
+    }
 
-    public init(from decoder: Decoder) throws {
+    public convenience init(for ownership: EventBusWriteOwnership = .shared) {
+        self.init(ownership: ownership, canWrite: ownership != .consumer)
+    }
+
+    public convenience init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
-        assert(container.decodeNil())
+        let ownership = try container.decode(EventBusWriteOwnership.self)
+        self.init(ownership: ownership, canWrite: ownership != .producer)
     }
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
-        try container.encodeNil()
+        try container.encode(ownership)
     }
 
     public func send(_ event: Event) {
