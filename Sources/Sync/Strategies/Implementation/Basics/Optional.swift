@@ -21,7 +21,7 @@ class OptionalStrategy<Wrapped : Codable>: SyncStrategy {
         switch event {
         case .insert(let path, _, _) where path.isEmpty:
             throw OptionalEventHandlingError.cannotHandleInsertion
-        case .delete(let path) where path.isEmpty:
+        case .delete(let path, _) where path.isEmpty:
             value = nil
             return .alertRemainingConnections
         case .delete:

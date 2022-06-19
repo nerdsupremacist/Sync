@@ -2,7 +2,7 @@
 import Foundation
 
 enum InternalEvent {
-    case delete([PathComponent])
+    case delete([PathComponent], width: Int = 1)
     case write([PathComponent], Data)
     case insert([PathComponent], index: Int, Data)
 
@@ -10,8 +10,8 @@ enum InternalEvent {
         switch self {
         case .write(let path, let data):
             return .write(Array(path.dropFirst()), data)
-        case .delete(let path):
-            return .delete(Array(path.dropFirst()))
+        case .delete(let path, let width):
+            return .delete(Array(path.dropFirst()), width: width)
         case .insert(let path, let index, let data):
             return .insert(Array(path.dropFirst()), index: index, data)
         }
@@ -21,8 +21,8 @@ enum InternalEvent {
         switch self {
         case .write(let path, let data):
             return .write([.index(index)] + path, data)
-        case .delete(let path):
-            return .delete([.index(index)] + path)
+        case .delete(let path, let width):
+            return .delete([.index(index)] + path, width: width)
         case .insert(let path, let insertionIndex, let data):
             return .insert([.index(index)] + path, index: insertionIndex, data)
         }
@@ -32,8 +32,8 @@ enum InternalEvent {
         switch self {
         case .write(let path, let data):
             return .write([.name(label)] + path, data)
-        case .delete(let path):
-            return .delete([.name(label)] + path)
+        case .delete(let path, let width):
+            return .delete([.name(label)] + path, width: width)
         case .insert(let path, let insertionIndex, let data):
             return .insert([.name(label)] + path, index: insertionIndex, data)
         }
@@ -83,7 +83,9 @@ extension InternalEvent: Codable {
         case .write:
             self = .write(try container.decode([PathComponent].self), try container.decode(Data.self))
         case .delete:
-            self = .delete(try container.decode([PathComponent].self))
+            let path = try container.decode([PathComponent].self)
+            let width = container.isAtEnd ? 1 : try container.decode(Int.self)
+            self = .delete(path, width: width)
         case .insert:
             self = .insert(try container.decode([PathComponent].self), index: try container.decode(Int.self), try container.decode(Data.self))
         }
@@ -97,9 +99,12 @@ extension InternalEvent: Codable {
             try container.encode(Kind.write)
             try container.encode(path)
             try container.encode(data)
-        case .delete(let path):
+        case .delete(let path, let width):
             try container.encode(Kind.delete)
             try container.encode(path)
+            if width != 1 {
+                try container.encode(width)
+            }
         case .insert(let path, let index, let data):
             try container.encode(Kind.insert)
             try container.encode(path)

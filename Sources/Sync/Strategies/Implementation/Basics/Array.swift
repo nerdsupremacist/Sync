@@ -52,9 +52,9 @@ class ArrayStrategy<Element : Codable>: SyncStrategy {
             } else {
                 throw ArrayEventHandlingError.intIndexReceivedOutOfBounds(index)
             }
-        case .delete(let path) where path.isEmpty:
+        case .delete(let path, _) where path.isEmpty:
             throw ArrayEventHandlingError.deletionOfWholeArrayNotAllowed
-        case .delete(let path) where path.count == 1:
+        case .delete(let path, _) where path.count == 1:
             guard case .some(.index(let index)) = path.first else {
                 throw ArrayEventHandlingError.expectedIntIndexInPathButReceivedSomethingElse
             }
@@ -63,7 +63,7 @@ class ArrayStrategy<Element : Codable>: SyncStrategy {
             }
             value.remove(at: index)
             return .alertRemainingConnections
-        case .delete(let path):
+        case .delete(let path, _):
             guard case .some(.index(let index)) = path.first else {
                 throw ArrayEventHandlingError.expectedIntIndexInPathButReceivedSomethingElse
             }

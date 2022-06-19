@@ -35,9 +35,9 @@ class SyncableObjectStrategy<Value: SyncableObject>: SyncStrategy {
         switch event {
         case .insert(let path, _, _) where path.isEmpty:
             throw ObjectEventHandlingError.cannotHandleInsertion
-        case .delete(let path) where path.isEmpty:
+        case .delete(let path, _) where path.isEmpty:
             throw ObjectEventHandlingError.cannotDeleteSyncedObject
-        case .delete(let path), .write(let path, _), .insert(let path, _, _):
+        case .delete(let path, _), .write(let path, _), .insert(let path, _, _):
             let strategiesPerPath = computeStrategies(for: value)
             guard case .some(.name(let label)) = path.first else {
                 throw ObjectEventHandlingError.pathForObjectWasNotAStringLabel
